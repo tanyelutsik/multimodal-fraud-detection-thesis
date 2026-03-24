@@ -152,10 +152,8 @@ if __name__ == "__main__":
     print_split_info(X_train, X_val, X_test, y_train, y_val, y_test)
 
     print("Missing values:")
-print(df.isnull().sum())
-
-print("\nDuplicate rows:")
-print(df.duplicated().sum())
-
-print("\nTransaction types:")
-print(df["type"].value_counts())
+    print(df.isnull().sum())
+    print("\nDuplicate rows:")
+    print(df.duplicated().sum())
+    print("\nTransaction types:")
+    print(df["type"].value_counts())
