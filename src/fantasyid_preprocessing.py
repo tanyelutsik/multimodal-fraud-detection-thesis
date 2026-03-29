@@ -17,48 +17,50 @@ def get_all_image_paths(root_path):
 
 
 def infer_split_from_parts(parts):
-    if "train" in parts:
+    parts_lower = [p.lower() for p in parts]
+
+    if "train" in parts_lower:
         return "train"
-    elif "test" in parts:
+    if "test" in parts_lower:
         return "test"
     return None
 
 
-def infer_label_from_parts(parts):
-    if "bonafide" in parts:
-        return 0
-    elif "attack" in parts:
-        return 1
-    return None
+def infer_original_folder(parts):
+    parts_lower = [p.lower() for p in parts]
 
-
-def infer_class_name_from_parts(parts):
-    if "bonafide" in parts:
+    if "bonafide" in parts_lower:
         return "bonafide"
-    elif "attack" in parts:
+    if "attack" in parts_lower:
         return "attack"
     return None
 
 
+def infer_image_class(parts):
+    parts_lower = [p.lower() for p in parts]
+
+    if "bonafide" in parts_lower:
+        return "bona_fide"
+    if "attack" in parts_lower:
+        return "fraudulent"
+    return None
+
+
 def infer_capture_type(parts):
-    """
-    For bonafide images, the folder after 'bonafide' is the capture type:
-    e.g. bonafide/huawei/, bonafide/scan/
-    """
-    if "bonafide" in parts:
-        idx = parts.index("bonafide")
+    parts_lower = [p.lower() for p in parts]
+
+    if "bonafide" in parts_lower:
+        idx = parts_lower.index("bonafide")
         if idx + 1 < len(parts):
             return parts[idx + 1]
     return None
 
 
 def infer_attack_type(parts):
-    """
-    For attack images, the folder after 'attack' is the attack subtype:
-    e.g. attack/digital_1/, attack/facedancer/
-    """
-    if "attack" in parts:
-        idx = parts.index("attack")
+    parts_lower = [p.lower() for p in parts]
+
+    if "attack" in parts_lower:
+        idx = parts_lower.index("attack")
         if idx + 1 < len(parts):
             return parts[idx + 1]
     return None
@@ -74,35 +76,66 @@ def get_image_size(image_path):
 
 def build_fantasyid_dataframe(root_path):
     root_path = Path(root_path)
-    image_paths = get_all_image_paths(root_path)
 
+    if not root_path.exists():
+        raise FileNotFoundError(f"FantasyID root folder does not exist: {root_path}")
+
+    image_paths = get_all_image_paths(root_path)
     rows = []
 
     for img_path in image_paths:
         rel_path = img_path.relative_to(root_path)
         parts = rel_path.parts
 
-        split = infer_split_from_parts(parts)
-        image_label = infer_label_from_parts(parts)
-        class_name = infer_class_name_from_parts(parts)
+        split_source = infer_split_from_parts(parts)
+        original_folder = infer_original_folder(parts)
+        image_class = infer_image_class(parts)
         capture_type = infer_capture_type(parts)
         attack_type = infer_attack_type(parts)
         width, height = get_image_size(img_path)
 
+        if image_class == "bona_fide":
+            final_label = "bona_fide"
+        elif image_class == "fraudulent":
+            final_label = "fraudulent"
+        else:
+            final_label = None
+
         rows.append({
-            "image_id": img_path.stem,
-            "image_path": str(img_path),
+            "source_dataset": "fantasyid",
+            "image_path": str(img_path.resolve()),
             "relative_path": str(rel_path),
-            "filename": img_path.name,
+            "file_name": img_path.name,
+            "file_stem": img_path.stem,
             "suffix": img_path.suffix.lower(),
-            "split": split,
-            "class_name": class_name,
-            "image_label": image_label,
+            "split_source": split_source,
+            "original_folder": original_folder,
+            "image_class": image_class,
+            "final_label": final_label,
             "capture_type": capture_type,
             "attack_type": attack_type,
             "width": width,
-            "height": height
+            "height": height,
+            "is_synthetic": False
         })
 
     df = pd.DataFrame(rows)
+
+    # keep only rows that map to the final thesis label schema
+    df = df[df["final_label"].notna()].reset_index(drop=True)
+
+    # create stable sample IDs after filtering
+    df["sample_id"] = [f"fantasyid_{i:06d}" for i in range(len(df))]
+
+    # optional: move sample_id to first column
+    columns = ["sample_id"] + [col for col in df.columns if col != "sample_id"]
+    df = df[columns]
+
     return df
+
+
+def save_metadata(df: pd.DataFrame, output_path: str) -> None:
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_path, index=False)
+    print(f"Saved metadata to: {output_path}")
