@@ -23,6 +23,8 @@ def infer_split_from_parts(parts):
         return "train"
     if "test" in parts_lower:
         return "test"
+    if "valid" in parts_lower or "val" in parts_lower or "validation" in parts_lower:
+        return "val"
     return None
 
 
@@ -42,17 +44,25 @@ def infer_image_class(parts):
     if "bonafide" in parts_lower:
         return "bona_fide"
     if "attack" in parts_lower:
-        return "fraudulent"
+        return "forged"
     return None
 
 
 def infer_capture_type(parts):
     parts_lower = [p.lower() for p in parts]
 
+    # bonafide/<device>/image.jpg
     if "bonafide" in parts_lower:
         idx = parts_lower.index("bonafide")
         if idx + 1 < len(parts):
             return parts[idx + 1]
+
+    # attack/<attack_type>/<device>/image.jpg
+    if "attack" in parts_lower:
+        idx = parts_lower.index("attack")
+        if idx + 2 < len(parts):
+            return parts[idx + 2]
+
     return None
 
 
@@ -94,42 +104,36 @@ def build_fantasyid_dataframe(root_path):
         attack_type = infer_attack_type(parts)
         width, height = get_image_size(img_path)
 
-        if image_class == "bona_fide":
-            final_label = "bona_fide"
-        elif image_class == "fraudulent":
-            final_label = "fraudulent"
-        else:
-            final_label = None
+        final_label = image_class
 
         rows.append({
-            "source_dataset": "fantasyid",
+            # canonical columns for final merge
             "image_path": str(img_path.resolve()),
-            "relative_path": str(rel_path),
+            "source_dataset": "fantasyid",
+            "image_class": image_class,
+            "group_key": img_path.stem,
+            "doc_type": None,
+            "source_type": capture_type,
             "file_name": img_path.name,
+            "split_source": split_source,
+            "original_label": original_folder,
+
+            # extra metadata
+            "relative_path": str(rel_path),
             "file_stem": img_path.stem,
             "suffix": img_path.suffix.lower(),
-            "split_source": split_source,
-            "original_folder": original_folder,
-            "image_class": image_class,
-            "final_label": final_label,
             "capture_type": capture_type,
             "attack_type": attack_type,
             "width": width,
             "height": height,
-            "is_synthetic": False
+            "is_synthetic": False,
+            "final_label": final_label,
         })
 
     df = pd.DataFrame(rows)
 
     # keep only rows that map to the final thesis label schema
-    df = df[df["final_label"].notna()].reset_index(drop=True)
-
-    # create stable sample IDs after filtering
-    df["sample_id"] = [f"fantasyid_{i:06d}" for i in range(len(df))]
-
-    # optional: move sample_id to first column
-    columns = ["sample_id"] + [col for col in df.columns if col != "sample_id"]
-    df = df[columns]
+    df = df[df["final_label"].isin(["bona_fide", "forged"])].reset_index(drop=True)
 
     return df
 
