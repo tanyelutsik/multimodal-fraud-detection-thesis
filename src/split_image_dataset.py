@@ -103,25 +103,24 @@ def main():
         .replace({
             "valid": "val",
             "validation": "val",
-        })
-    )
+    })
+)
 
     fantasy_train_source = fantasy[fantasy["split_source"] == "train"].copy()
     fantasy_test = fantasy[fantasy["split_source"] == "test"].copy()
 
-    # split only the original FantasyID train into train/val
+    # split by unique group_key only
     fantasy_train_groups = (
-        fantasy_train_source[["group_key", "image_class"]]
+        fantasy_train_source[["group_key"]]
         .drop_duplicates()
         .reset_index(drop=True)
-    )
+)
 
     fantasy_train_g, fantasy_val_g = train_test_split(
         fantasy_train_groups,
-        test_size=0.2,   # 20% of original fantasy train becomes val
-        random_state=42,
-        stratify=fantasy_train_groups["image_class"]
-    )
+        test_size=0.2,
+        random_state=42
+)
 
     fantasy_train = fantasy_train_source[
         fantasy_train_source["group_key"].isin(fantasy_train_g["group_key"])
@@ -135,12 +134,23 @@ def main():
     fantasy_val["split"] = "val"
     fantasy_test["split"] = "test"
 
+    # safety check
+    assert len(set(fantasy_train["group_key"]) & set(fantasy_val["group_key"])) == 0, \
+        "FantasyID group leakage between train and val"
+
     # -----------------------------
     # Merge final splits
     # -----------------------------
     image_train = pd.concat([midv_train, fantasy_train, fmidv_train], ignore_index=True)
     image_val = pd.concat([midv_val, fantasy_val, fmidv_val], ignore_index=True)
     image_test = pd.concat([midv_test, fantasy_test, fmidv_test], ignore_index=True)
+    
+    assert len(set(image_train["image_path"]) & set(image_val["image_path"])) == 0, \
+        "Image train/val overlap detected"
+    assert len(set(image_train["image_path"]) & set(image_test["image_path"])) == 0, \
+        "Image train/test overlap detected"
+    assert len(set(image_val["image_path"]) & set(image_test["image_path"])) == 0, \
+        "Image val/test overlap detected"
 
     # Save
     train_path = processed_dir / "image_train.csv"
