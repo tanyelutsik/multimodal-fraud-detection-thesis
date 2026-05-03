@@ -150,13 +150,22 @@ def pair_mixed_split(
     print(f"    img genuine={len(img_genuine)}, img forged={len(img_forged)}")
 
     # How many (0,0) pairs can we make?
-    n_neg = min(len(tab_genuine), len(img_genuine))
+    n_neg_max = min(len(tab_genuine), len(img_genuine))
 
     # Divide positive budget equally across 3 fraud combinations
-    # Each combination limited by its own pool sizes
-    n_11 = min(len(tab_fraud),   len(img_forged),  n_neg // 3)
-    n_10 = min(len(tab_fraud),   len(img_genuine),  n_neg // 3)
-    n_01 = min(len(tab_genuine), len(img_forged),   n_neg // 3)
+    # Each combination limited by its own pool sizes AND remaining pool
+    # after tab0_img0 takes its share
+    budget     = n_neg_max // 3
+
+    n_11 = min(len(tab_fraud),   len(img_forged),                         budget)
+    # tab1_img0 uses img_genuine AFTER n_neg rows are used for tab0_img0
+    # remaining genuine = len(img_genuine) - n_neg_max
+    remaining_genuine = max(0, len(img_genuine) - n_neg_max)
+    n_10 = min(len(tab_fraud),   remaining_genuine,                        budget)
+    # tab0_img1 uses img_forged AFTER n_11 rows are used for tab1_img1
+    remaining_forged  = max(0, len(img_forged) - n_11)
+    n_01 = min(len(tab_genuine), remaining_forged,                         budget)
+
     n_pos = n_11 + n_10 + n_01
 
     # Rebalance: use n_pos negatives so dataset is balanced
@@ -167,8 +176,13 @@ def pair_mixed_split(
     parts = []
 
     def make_pairs(tab_part, img_part, n, combo_label, combo_code):
+        # Safety: never request more rows than available
+        n = min(n, len(tab_part), len(img_part))
+        if n == 0:
+            return pd.DataFrame()
         tab_s = tab_part.iloc[:n].reset_index(drop=True).add_prefix("tab_")
         img_s = img_part.iloc[:n].reset_index(drop=True).add_prefix("img_")
+        assert len(tab_s) == len(img_s), f"Size mismatch: tab={len(tab_s)} img={len(img_s)}"
         merged = pd.concat([tab_s, img_s], axis=1)
         merged["final_label"]      = combo_label
         merged["tab_fraud_label"]  = int(combo_code[0])
