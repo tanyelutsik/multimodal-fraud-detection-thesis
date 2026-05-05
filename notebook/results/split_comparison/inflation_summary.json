@@ -1,0 +1,16 @@
+{
+  "old_split": {
+    "f1": 0.8058,
+    "roc_auc": 0.9477,
+    "overlap": 287
+  },
+  "new_split": {
+    "f1": 0.9216,
+    "roc_auc": 0.9731,
+    "overlap": 0
+  },
+  "inflation": {
+    "f1_points": -0.1157,
+    "roc_auc_points": -0.0254
+  }
+}
