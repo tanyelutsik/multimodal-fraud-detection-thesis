@@ -76,54 +76,48 @@ from sklearn.preprocessing import StandardScaler
 # Feature definitions
 # ---------------------------------------------------------------------------
 
+TARGET_COL = "final_label"
+
 # Raw transaction features — same as notebooks 11, 12, 17
+# tab_isFraud EXCLUDED — final_label is derived from it (leakage)
+# tab_isFlaggedFraud INCLUDED — PaySim rule-based flag, not the label
 TAB_RAW = [
-    "tab_type",            # transaction type (encoded 0-4)
+    "tab_type",
     "tab_amount",
     "tab_oldbalanceOrg",
     "tab_newbalanceOrig",
     "tab_oldbalanceDest",
     "tab_newbalanceDest",
-    "tab_isFlaggedFraud",  # rule-based flag, NOT the label
+    "tab_isFlaggedFraud",
 ]
 
-# Engineered features — same as notebook 18 XGBoost
 TAB_ENGINEERED = [
-    "tab_balance_delta_orig",    # newbalanceOrig - oldbalanceOrg
-    "tab_balance_delta_dest",    # newbalanceDest - oldbalanceDest
-    "tab_amount_ratio_orig",     # amount / (oldbalanceOrg + 1)
-    "tab_amount_ratio_dest",     # amount / (oldbalanceDest + 1)
-    "tab_orig_balance_zeroed",   # 1 if newbalanceOrig == 0
+    "tab_balance_delta_orig",
+    "tab_balance_delta_dest",
+    "tab_amount_ratio_orig",
+    "tab_amount_ratio_dest",
+    "tab_orig_balance_zeroed",
 ]
 
 TAB_ALL_FE = TAB_RAW + TAB_ENGINEERED
 
-TARGET_COL = "final_label"
-
-# Columns that must NEVER be used as features
 FORBIDDEN_COLS = {
-    "tab_isFraud",         # leaks the label — final_label is derived from this
-    "tab_final_label",
-    "img_final_label",
-    "img_image_class",
-    "img_original_label",
-    "combo_type",
-    "img_source_dataset",
-    "final_label",
-    "mm_id", "split", "img_split",
+    "tab_isFraud", "tab_final_label", "final_label",
+    "img_final_label", "img_image_class", "img_original_label",
+    "combo_type", "img_source_dataset",
+    "mm_id", "split", "img_split", "img_image_path",
 }
 
 
-# ---------------------------------------------------------------------------
-# Feature engineering
-# ---------------------------------------------------------------------------
+def validate_features(cols):
+    bad = set(cols) & FORBIDDEN_COLS
+    if bad:
+        raise ValueError(f"Forbidden columns (leakage): {sorted(bad)}")
+    print(f"Feature validation passed — {len(cols)} features, no leakage.")
 
-def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Add balance-delta and ratio features.
-    Same logic as notebook 18 (XGBoost tabular-only).
-    Call this before fitting the scaler or building the dataset.
-    """
+
+def engineer_features(df):
+    """Add balance-delta and ratio features — same as notebook 18."""
     d = df.copy()
     d["tab_balance_delta_orig"]  = d["tab_newbalanceOrig"] - d["tab_oldbalanceOrg"]
     d["tab_balance_delta_dest"]  = d["tab_newbalanceDest"] - d["tab_oldbalanceDest"]
@@ -131,16 +125,6 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     d["tab_amount_ratio_dest"]   = d["tab_amount"] / (d["tab_oldbalanceDest"] + 1)
     d["tab_orig_balance_zeroed"] = (d["tab_newbalanceOrig"] == 0).astype(int)
     return d
-
-
-def validate_features(tab_cols: List[str]) -> None:
-    """Raise if any forbidden column is in the feature list."""
-    bad = set(tab_cols) & FORBIDDEN_COLS
-    if bad:
-        raise ValueError(
-            f"Forbidden columns found in tab_cols: {bad}\n"
-            f"These would cause data leakage. Remove them."
-        )
 
 
 # ---------------------------------------------------------------------------
