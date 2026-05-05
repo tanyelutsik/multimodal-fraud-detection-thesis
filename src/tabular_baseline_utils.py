@@ -149,7 +149,7 @@ def build_logreg_pipeline(
         model = ImbPipeline(
             steps=[
                 ("preprocessor", preprocessor),
-                ("smote", SMOTE(random_state=random_state)),
+                ("smote", SMOTE(random_state=random_state, sampling_strategy=1.0)),
                 (
                     "classifier",
                     LogisticRegression(
@@ -355,4 +355,3 @@ def save_experiment_outputs(
         pd.DataFrame(tuned_cm, index=["true_0", "true_1"], columns=["pred_0", "pred_1"]).to_csv(
             results_dir / f"{prefix_str}tuned_test_confusion_matrix.csv"
         )
-        
