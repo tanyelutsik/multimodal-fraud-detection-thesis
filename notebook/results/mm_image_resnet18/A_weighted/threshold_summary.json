@@ -1,0 +1,4 @@
+{
+  "best_threshold": 0.35,
+  "selection_metric": "f1"
+}

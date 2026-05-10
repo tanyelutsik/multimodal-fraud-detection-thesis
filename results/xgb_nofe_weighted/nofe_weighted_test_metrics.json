@@ -1,5 +1,5 @@
 {
-    "split": "nofe_weighted \u2014 test",
+    "split": "test_weighted",
     "accuracy": 0.996437788206745,
     "precision": 0.26542207792207795,
     "recall": 0.9951308581862447,

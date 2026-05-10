@@ -1,5 +1,5 @@
 {
-    "split": "fe_smote \u2014 test",
+    "split": "test_fe_smote",
     "accuracy": 0.9999756389663378,
     "precision": 0.9837935174069627,
     "recall": 0.9975654290931223,

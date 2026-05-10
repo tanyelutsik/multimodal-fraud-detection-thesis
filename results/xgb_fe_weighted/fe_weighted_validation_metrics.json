@@ -1,5 +1,5 @@
 {
-    "split": "fe_weighted \u2014 val",
+    "split": "validation_fe_weighted",
     "accuracy": 0.9997092392756443,
     "precision": 0.8167330677290837,
     "recall": 0.9987819732034104,

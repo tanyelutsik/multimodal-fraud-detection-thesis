@@ -1,5 +1,5 @@
 {
-    "split": "fe_none \u2014 val",
+    "split": "validation_fe_none",
     "accuracy": 0.9998522621184355,
     "precision": 0.9526774595267746,
     "recall": 0.9317904993909866,

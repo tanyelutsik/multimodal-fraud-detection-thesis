@@ -1,5 +1,5 @@
 {
-    "split": "fe_none \u2014 test",
+    "split": "test_fe_none",
     "accuracy": 0.9998703364337332,
     "precision": 0.9584367245657568,
     "recall": 0.9403530127814973,

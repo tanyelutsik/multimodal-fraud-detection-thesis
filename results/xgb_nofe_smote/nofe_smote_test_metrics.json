@@ -1,5 +1,5 @@
 {
-    "split": "nofe_smote \u2014 test",
+    "split": "test_smote",
     "accuracy": 0.9984298920884793,
     "precision": 0.4505157513242264,
     "recall": 0.9835666463785758,

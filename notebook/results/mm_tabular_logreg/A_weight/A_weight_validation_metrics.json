@@ -1,5 +1,5 @@
 {
-    "split": "val_A_weight",
+    "split": "validation_A_weight",
     "accuracy": 0.7075596816976127,
     "precision": 0.8875379939209727,
     "recall": 0.6140904311251314,
