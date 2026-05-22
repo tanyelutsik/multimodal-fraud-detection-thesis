@@ -31,11 +31,9 @@ from imblearn.pipeline import Pipeline as ImbPipeline
 
 RANDOM_STATE = 42
 
-# Single source of truth for cost assumptions.
-# Change here and both compute_cost_table() and compute_expected_cost_from_cm()
-# pick it up automatically.
-DEFAULT_FN_COST: int = 50_000   # cost of a missed fraud (false negative)
-DEFAULT_FP_COST: int = 500      # cost of a false alarm (false positive)
+# Cost assumptions — imported from central config.
+# Change FN_COST / FP_COST in cost_config.py only.
+from cost_config import FN_COST as DEFAULT_FN_COST, FP_COST as DEFAULT_FP_COST
 
 
 # ── Feature engineering ───────────────────────────────────────────────────────
