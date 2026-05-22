@@ -1,0 +1,9 @@
+{
+    "split": "validation_fe_smote",
+    "accuracy": 0.9999764248061334,
+    "precision": 0.9820574162679426,
+    "recall": 1.0,
+    "f1": 0.9909474954737477,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0
+}
