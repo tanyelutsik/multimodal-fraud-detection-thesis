@@ -28,8 +28,6 @@ from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline as ImbPipeline
 
 
-from cost_config import FN_COST, FP_COST
-
 RANDOM_STATE = 42
 
 
@@ -225,8 +223,8 @@ def search_thresholds(model, X_val, y_val) -> pd.DataFrame:
 def compute_cost_table(
     threshold_results: pd.DataFrame,
     y_val: pd.Series,
-    fn_cost: int = FN_COST,
-    fp_cost: int = FP_COST,
+    fn_cost: int = 50000,
+    fp_cost: int = 500,
 ) -> pd.DataFrame:
     support_pos = int(y_val.sum())
     support_neg = int((y_val == 0).sum())
@@ -290,7 +288,7 @@ def evaluate_with_threshold(model, X_test, y_test, threshold: float) -> Tuple[Di
     return metrics, cm
 
 
-def compute_expected_cost_from_cm(cm: np.ndarray, fn_cost: int = FN_COST, fp_cost: int = FP_COST) -> Dict[str, int]:
+def compute_expected_cost_from_cm(cm: np.ndarray, fn_cost: int = 50000, fp_cost: int = 500) -> Dict[str, int]:
     tp = int(cm[1, 1])
     fn = int(cm[1, 0])
     fp = int(cm[0, 1])
